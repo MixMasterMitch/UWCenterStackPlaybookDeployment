@@ -1,3 +1,5 @@
+import static com.google.common.collect.ObjectArrays.concat;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -5,7 +7,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ObjectArrays;
 
 public class AppDeployer {
 	private static final String[] IGNORE_FILES = {"testing*", "DeployApp.app*", "PlayBookSigner.app*"};
@@ -50,7 +51,11 @@ public class AppDeployer {
 		p.waitFor();
 		printToConsole(p.getInputStream());
 		printToConsole(p.getErrorStream());
-		window.printlnToConsole("Finished Command");
+		if (p.exitValue() == 0) {
+			window.printlnToConsole("Finished Command");
+		} else {
+			throw new RuntimeException("Command Failed");
+		}
 		window.printlnToConsole("");
 	}
 
@@ -60,18 +65,22 @@ public class AppDeployer {
 		String[] zip = {"zip", "-r", window.getProjectPath(), ".", "*", "-x", ".*"};
 		String[] packageApp = {getBbwpPath(), window.getProjectPath() + ".zip", "-d", "-o", window.getProjectPath()};
 		String[] deployApp = {getDeployCommandPath(), "-installApp", "-password", window.getPlaybookPassword(), "-device", window.getPlaybookIp(), "-package", getPackagePath()};
-		String[] cleanUp = {"rm", window.getProjectPath() + ".zip", getPackagePath()};
+		String[] cleanUp = {"rm", "-f", window.getProjectPath() + ".zip", getPackagePath()};
 
-		runCommand(cleanUp);
-		runCommand(debugTokenRequest);
-		runCommand(installDebugToken);
-		runCommand(ObjectArrays.concat(zip, IGNORE_FILES, String.class), new File(window.getProjectPath()));
-		runCommand(packageApp);
-		runCommand(deployApp);
-		runCommand(cleanUp);
-		window.printlnToConsole("Finished All Commands");
+		try {
 			setRootHtmlFile();
+			runCommand(cleanUp);
+			runCommand(debugTokenRequest);
+			runCommand(installDebugToken);
+			runCommand(concat(zip, IGNORE_FILES, String.class), new File(window.getProjectPath()));
+			runCommand(packageApp);
+			runCommand(deployApp);
+			runCommand(cleanUp);
 			revertRootHtmlFile();
+			window.printlnToConsole("Finished All Commands");
+		} catch (Exception e) {
+			window.printlnToConsole("ERROR: Deployement failed:\n" + e);
+		}
 	}
 
 	private static void setRootHtmlFile() {
