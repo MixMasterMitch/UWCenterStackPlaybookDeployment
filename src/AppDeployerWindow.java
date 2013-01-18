@@ -33,7 +33,7 @@ public class AppDeployerWindow {
 	private static final String PACKAGED_SOURCE_FILE=DEFAULT_SOURCE_PATH + "/UWCenterStack.bar";
 	private static final String DEFAULT_PLAYBOOK_IP="69.91.176.132";
 	private static final String DEFAULT_PLAYBOOK_PASSWORD="playbook";
-	private static final String[] PLAYBOOK_PINS={"501138e7"};
+	private static final String[] PLAYBOOK_PINS={"501138E7", "502CEE27", "50303968"};
 	private static final String DEFAULT_TABLET_SKD ="/Developer/SDKs/Research In Motion/BlackBerry WebWorks SDK for TabletOS 2.2.0.5";
 	private static final String TABLET_SDK_BIN ="/bbwp/blackberry-tablet-sdk/bin";
 	private static final String BBWP="/bbwp/bbwp";
