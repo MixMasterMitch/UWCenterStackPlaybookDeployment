@@ -80,7 +80,7 @@ public class AppDeployer {
 	}
 
 	private static String getDebugTokenPath() {
-		return getSdkBin() + "/bbwp/blackberry-tablet-sdk/debug-tokens/playbook_debug_token.bar";
+		return window.getSdkPath() + "/bbwp/blackberry-tablet-sdk/debug-tokens/playbook_debug_token.bar";
 	}
 
 	private static String getPackagePath() {
