@@ -10,6 +10,7 @@ import com.google.common.collect.ObjectArrays;
 public class AppDeployer {
 	private static final String[] IGNORE_FILES = {"testing*", "DeployApp.app*", "PlayBookSigner.app*"};
 	private static AppDeployerWindow window;
+	private static String originalRootHtml;
 	//	# Debug Token Request
 	//	"$TABLET_SDK_BIN"/blackberry-debugtokenrequest -storepass $PLAYBOOK_PASSWORD -devicepin $PLAYBOOK_PIN "$DEBUG_TOKEN"
 	//
@@ -69,6 +70,29 @@ public class AppDeployer {
 		runCommand(deployApp);
 		runCommand(cleanUp);
 		window.printlnToConsole("Finished All Commands");
+			setRootHtmlFile();
+			revertRootHtmlFile();
+	}
+
+	private static void setRootHtmlFile() {
+		try {
+			originalRootHtml = new XmlModifier().modifyFile(window.getProjectPath() + "/config.xml", "content", "src", window.getRootHtml());
+			window.printlnToConsole("Changed src attribute of the content element in " + window.getProjectPath() + "/config.xml from " + originalRootHtml + " to " + window.getRootHtml());
+		} catch (Exception e) {
+			window.printlnToConsole("ERROR: Failed to change src attribute of the content element in " + window.getProjectPath() + "/config.xml to " + window.getRootHtml());
+			throw new RuntimeException(e);
+		}
+		window.printlnToConsole("");
+	}
+
+	private static void revertRootHtmlFile() {
+		try {
+			new XmlModifier().modifyFile(window.getProjectPath() + "/config.xml", "content", "src", originalRootHtml);
+			window.printlnToConsole("Reverted src attribute of the content element in " + window.getProjectPath() + "/config.xml from " + window.getRootHtml() + " to " + originalRootHtml);
+		} catch (Exception e) {
+			window.printlnToConsole("ERROR: Failed to revert src attribute of the content element in " + window.getProjectPath() + "/config.xml to " + originalRootHtml);
+		}
+		window.printlnToConsole("");
 	}
 
 	private static String getSdkBin() {

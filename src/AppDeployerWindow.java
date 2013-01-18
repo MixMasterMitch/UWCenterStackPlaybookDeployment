@@ -28,16 +28,11 @@ import javax.swing.JTextField;
 
 public class AppDeployerWindow {
 	private static final String DEFAULT_SOURCE_PATH=System.getProperty("user.home") + "/Documents/GitHub/UWCenterStack";
-	private static final String ZIPPED_SOURCE_PATH=DEFAULT_SOURCE_PATH + ".zip";
-	private static final String PACKAGED_SOURCE_PATH=DEFAULT_SOURCE_PATH;
-	private static final String PACKAGED_SOURCE_FILE=DEFAULT_SOURCE_PATH + "/UWCenterStack.bar";
 	private static final String DEFAULT_PLAYBOOK_IP="69.91.176.132";
 	private static final String DEFAULT_PLAYBOOK_PASSWORD="playbook";
 	private static final String[] PLAYBOOK_PINS={"501138E7", "502CEE27", "50303968"};
 	private static final String DEFAULT_TABLET_SKD ="/Developer/SDKs/Research In Motion/BlackBerry WebWorks SDK for TabletOS 2.2.0.5";
-	private static final String TABLET_SDK_BIN ="/bbwp/blackberry-tablet-sdk/bin";
-	private static final String BBWP="/bbwp/bbwp";
-	private static final String DEBUG_TOKEN = "/bbwp/blackberry-tablet-sdk/debug-tokens/playbook_debug_token.bar";
+	private static final String DEFAULT_ROOT_HTML ="srcs/t2c/coord.html";
 
 	JPanel fieldsPanel = new JPanel();
 	JTextField playbookIpField = new JTextField();
@@ -51,6 +46,8 @@ public class AppDeployerWindow {
 	JLabel sdkPathLabel = new JLabel();
 	JTextField projectPathField = new JTextField();
 	JLabel projectPathLabel = new JLabel();
+	JTextField rootHtmlPathField = new JTextField();
+	JLabel rootHtmlPathLabel = new JLabel();
 
 	JTextArea console = new JTextArea();
 
@@ -78,6 +75,8 @@ public class AppDeployerWindow {
 		sdkPathLabel.setText("SDK Path");
 		projectPathField.setText(DEFAULT_SOURCE_PATH);
 		projectPathLabel.setText("Project Path");
+		rootHtmlPathField.setText(DEFAULT_ROOT_HTML);
+		rootHtmlPathLabel.setText("Root Html File");
 
 		deployButton.setText("Deploy");
 		deployButton.addActionListener(new ActionListener() {
@@ -122,12 +121,16 @@ public class AppDeployerWindow {
 																.addGroup(layout.createSequentialGroup()
 																		.addComponent(sdkPathField)
 																		.addPreferredGap(RELATED)
-																		.addComponent(sdkPathLabel)))
-																		.addContainerGap(27, MAX_VALUE))
+																		.addComponent(sdkPathLabel))
+																		.addGroup(layout.createSequentialGroup()
+																				.addComponent(rootHtmlPathField)
+																				.addPreferredGap(RELATED)
+																				.addComponent(rootHtmlPathLabel)))
+																				.addContainerGap(27, MAX_VALUE))
 				);
 
 		layout.linkSize(HORIZONTAL, new Component[] {playbookPasswordField, playbookIpField, playbookPinComboBox});
-		layout.linkSize(HORIZONTAL, new Component[] {sdkPathField, projectPathField});
+		layout.linkSize(HORIZONTAL, new Component[] {sdkPathField, projectPathField, rootHtmlPathField});
 
 		layout.setVerticalGroup(
 				layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -153,7 +156,11 @@ public class AppDeployerWindow {
 																.addComponent(sdkPathField)
 																.addComponent(sdkPathLabel))
 																.addPreferredGap(RELATED)
-																.addContainerGap(21, Short.MAX_VALUE))
+																.addGroup(layout.createParallelGroup(BASELINE)
+																		.addComponent(rootHtmlPathField)
+																		.addComponent(rootHtmlPathLabel))
+																		.addPreferredGap(RELATED)
+																		.addContainerGap(21, Short.MAX_VALUE))
 				);
 
 		JScrollPane consoleScroller = new JScrollPane(console);
@@ -196,5 +203,9 @@ public class AppDeployerWindow {
 
 	public String getProjectPath() {
 		return projectPathField.getText();
+	}
+
+	public String getRootHtml() {
+		return rootHtmlPathField.getText();
 	}
 }
