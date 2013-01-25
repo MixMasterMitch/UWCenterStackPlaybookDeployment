@@ -1,3 +1,4 @@
+package com.uwecocar2.appdeployer;
 /**
  * Used to notify the AppDeployer in the main thread when the config.xml is changed.
  */

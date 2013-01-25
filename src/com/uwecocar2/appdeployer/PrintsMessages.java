@@ -1,3 +1,4 @@
+package com.uwecocar2.appdeployer;
 public interface PrintsMessages {
 	/**
 	 * Adds a line break to the console.

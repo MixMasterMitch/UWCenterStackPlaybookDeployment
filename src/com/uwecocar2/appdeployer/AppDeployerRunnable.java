@@ -1,3 +1,4 @@
+package com.uwecocar2.appdeployer;
 /**
  * Base {@link Runnable} implementation.
  */

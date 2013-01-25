@@ -1,3 +1,4 @@
+package com.uwecocar2.appdeployer;
 import static java.awt.Component.LEFT_ALIGNMENT;
 import static java.lang.Short.MAX_VALUE;
 import static javax.swing.GroupLayout.DEFAULT_SIZE;
