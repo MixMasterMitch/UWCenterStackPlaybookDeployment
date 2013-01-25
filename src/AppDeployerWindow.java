@@ -26,42 +26,51 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+/**
+ * The user interface for the AppDeployer.
+ * 
+ * Displays logs in the console.
+ */
 public class AppDeployerWindow implements PrintsMessages {
-	private static final String DEFAULT_SOURCE_PATH=System.getProperty("user.home") + "/Documents/GitHub/UWCenterStack";
-	private static final String DEFAULT_PLAYBOOK_IP="169.254.0.1";
-	private static final String DEFAULT_PLAYBOOK_PASSWORD="playbook";
-	private static final String[] PLAYBOOK_PINS={"501138E7", "502CEE27", "50303968"};
-	private static final String DEFAULT_TABLET_SKD ="/Developer/SDKs/Research In Motion/BlackBerry WebWorks SDK for TabletOS 2.2.0.5";
-	private static final String DEFAULT_ROOT_HTML ="srcs/t2c/coord.html";
+	private static final String DEFAULT_SOURCE_PATH = System.getProperty("user.home") + "/Documents/GitHub/UWCenterStack";
+	private static final String DEFAULT_PLAYBOOK_IP = "169.254.0.1";
+	private static final String DEFAULT_PLAYBOOK_PASSWORD = "playbook";
+	private static final String[] PLAYBOOK_PINS = {"501138E7", "502CEE27", "50303968"};
+	private static final String DEFAULT_TABLET_SKD = "/Developer/SDKs/Research In Motion/BlackBerry WebWorks SDK for TabletOS 2.2.0.5";
+	private static final String DEFAULT_ROOT_HTML = "srcs/t2c/coord.html";
+	private static final String MAIN_WINDOW_TITLE = "Deploy App";
 
-	JPanel fieldsPanel = new JPanel();
-	JTextField playbookIpField = new JTextField();
-	JLabel playbookIpLabel = new JLabel();
-	JTextField playbookPasswordField = new JTextField();
-	JLabel playbookPasswordLabel = new JLabel();
-	JComboBox playbookPinComboBox = new JComboBox();
-	JLabel playbookPinLabel = new JLabel();
-	JPanel panel2 = new JPanel();
-	JTextField sdkPathField = new JTextField();
-	JLabel sdkPathLabel = new JLabel();
-	JTextField projectPathField = new JTextField();
-	JLabel projectPathLabel = new JLabel();
-	JTextField rootHtmlPathField = new JTextField();
-	JLabel rootHtmlPathLabel = new JLabel();
-	JButton deployButton = new JButton();
+	// UI elements
+	private final JPanel fieldsPanel = new JPanel();
+	private final JTextField playbookIpField = new JTextField();
+	private final JLabel playbookIpLabel = new JLabel();
+	private final JTextField playbookPasswordField = new JTextField();
+	private final JLabel playbookPasswordLabel = new JLabel();
+	private final JComboBox playbookPinComboBox = new JComboBox();
+	private final JLabel playbookPinLabel = new JLabel();
+	private final JTextField sdkPathField = new JTextField();
+	private final JLabel sdkPathLabel = new JLabel();
+	private final JTextField projectPathField = new JTextField();
+	private final JLabel projectPathLabel = new JLabel();
+	private final JTextField rootHtmlPathField = new JTextField();
+	private final JLabel rootHtmlPathLabel = new JLabel();
+	private final JButton deployButton = new JButton();
 
-	JTextArea console = new JTextArea();
+	private final JTextArea console = new JTextArea();
 
 	public AppDeployerWindow() {
-		JFrame mainWindow = new JFrame("Deploy App");
+		// Create mainWindow to hold all other elements
+		JFrame mainWindow = new JFrame(MAIN_WINDOW_TITLE);
 		mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+		// Create button panel to hold the deploy button
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
 		buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
 		buttonPanel.add(Box.createHorizontalGlue());
 		buttonPanel.add(deployButton);
 
+		// Setup UI fields
 		playbookIpField.setText(DEFAULT_PLAYBOOK_IP);
 		playbookIpLabel.setText("Playbook IP Address");
 		playbookPasswordField.setText(DEFAULT_PLAYBOOK_PASSWORD);
@@ -78,6 +87,7 @@ public class AppDeployerWindow implements PrintsMessages {
 		rootHtmlPathField.setText(DEFAULT_ROOT_HTML);
 		rootHtmlPathLabel.setText("Root Html File");
 
+		// Setup deployButton
 		deployButton.setText("Deploy");
 		deployButton.addActionListener(new ActionListener() {
 
@@ -93,9 +103,10 @@ public class AppDeployerWindow implements PrintsMessages {
 			}
 		});
 
+		// Setup console
 		console.setEditable(false);
 
-
+		// Setup fiels and labels layout
 		GroupLayout layout = new GroupLayout(fieldsPanel);
 		fieldsPanel.setLayout(layout);
 		layout.setHorizontalGroup(
@@ -164,10 +175,12 @@ public class AppDeployerWindow implements PrintsMessages {
 																		.addContainerGap(21, Short.MAX_VALUE))
 				);
 
+		// Make the console scrollable
 		JScrollPane consoleScroller = new JScrollPane(console);
 		consoleScroller.setPreferredSize(new Dimension(300, 300));
 		consoleScroller.setAlignmentX(LEFT_ALIGNMENT);
 
+		// Combine panels
 		JPanel bodyPanel = new JPanel();
 		bodyPanel.setLayout(new BorderLayout());
 		bodyPanel.add(fieldsPanel, BorderLayout.CENTER);
@@ -182,16 +195,46 @@ public class AppDeployerWindow implements PrintsMessages {
 
 	}
 
+	/**
+	 * @return The IP address entered by the user.
+	 */
 	public String getPlaybookIp() {
 		return playbookIpField.getText();
 	}
 
+	/**
+	 * @return The Playbook PIN selected by the user.
+	 */
 	public String getPlaybookPin() {
 		return (String) playbookPinComboBox.getSelectedItem();
 	}
 
+	/**
+	 * @return The Playbook password entered by the user.
+	 */
 	public String getPlaybookPassword() {
 		return playbookPasswordField.getText();
+	}
+
+	/**
+	 * @return The Playbook SDK path entered by the user.
+	 */
+	public String getSdkPath() {
+		return sdkPathField.getText();
+	}
+
+	/**
+	 * @return The path to the root of the application entered by the user.
+	 */
+	public String getProjectPath() {
+		return projectPathField.getText();
+	}
+
+	/**
+	 * @return The path to the application entry point webpage entered by the user.
+	 */
+	public String getRootHtml() {
+		return rootHtmlPathField.getText();
 	}
 
 	@Override
@@ -199,23 +242,15 @@ public class AppDeployerWindow implements PrintsMessages {
 		console.setText(console.getText() + text + "\n");
 	}
 
-	public String getSdkPath() {
-		return sdkPathField.getText();
-	}
-
-	public String getProjectPath() {
-		return projectPathField.getText();
-	}
-
-	public String getRootHtml() {
-		return rootHtmlPathField.getText();
-	}
-
 	@Override
 	public void printlnToConsole() {
 		printlnToConsole("");
 	}
 
+	/**
+	 * Enables or disables the deployment button.
+	 * @param enable true to enable the button.
+	 */
 	public void enableDeployment(boolean enable) {
 		deployButton.setEnabled(enable);
 	}

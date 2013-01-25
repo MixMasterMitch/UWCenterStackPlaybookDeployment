@@ -1,6 +1,5 @@
 import java.io.File;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -10,7 +9,9 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-
+/**
+ * Modifies an xml file.
+ */
 public class XmlModifier extends AppDeployerRunnable {
 	private String file;
 	private String element;
@@ -65,19 +66,17 @@ public class XmlModifier extends AppDeployerRunnable {
 
 	@Override
 	public void run() {
-		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder docBuilder;
 		try {
-			docBuilder = docFactory.newDocumentBuilder();
-			Document doc = docBuilder.parse(file);
+			// Parse xml file
+			Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file);
 
+			// Manipulite xml DOM
 			Node elementNode = doc.getElementsByTagName(element).item(0);
 			Node attributeNode = elementNode.getAttributes().getNamedItem(attribute);
 			String originalValue = attributeNode.getTextContent();
 			attributeNode.setTextContent(value);
 
-
-			// write the content into xml file
+			// Write the content into xml file
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();
 			DOMSource source = new DOMSource(doc);

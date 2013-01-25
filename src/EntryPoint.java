@@ -1,4 +1,6 @@
-
+/**
+ * The main method class used to start up the AppDeployer.
+ */
 public class EntryPoint {
 
 	public static void main(String[] args) {

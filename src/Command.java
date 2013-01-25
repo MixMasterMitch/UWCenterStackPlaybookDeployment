@@ -6,7 +6,9 @@ import java.io.InputStreamReader;
 
 import com.google.common.base.Joiner;
 
-
+/**
+ * A Command that will run as a new process.
+ */
 public class Command extends AppDeployerRunnable {
 	private final String[] args;
 	private final File workingDir;
@@ -22,12 +24,15 @@ public class Command extends AppDeployerRunnable {
 		this.args = args;
 	}
 
+	/**
+	 * Runs the args as a new process. When the process is complete, the output is displayed in the
+	 * console.
+	 */
 	@Override
 	public void run() {
 		console.printlnToConsole("Running Command: " + Joiner.on(" ").join(args));
-		Process p;
 		try {
-			p = Runtime.getRuntime().exec(args, new String[0], workingDir);
+			Process p = Runtime.getRuntime().exec(args, new String[0], workingDir);
 			p.waitFor();
 			printToConsole(p.getInputStream());
 			printToConsole(p.getErrorStream());

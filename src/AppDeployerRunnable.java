@@ -1,4 +1,6 @@
-
+/**
+ * Base {@link Runnable} implementation.
+ */
 abstract class AppDeployerRunnable implements Runnable {
 	protected PrintsMessages console;
 	protected CancelsDeployement canceler;
