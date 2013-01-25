@@ -1,130 +1,156 @@
-import static com.google.common.collect.ObjectArrays.concat;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.util.concurrent.ExecutorService;
 
-import com.google.common.base.Joiner;
+//# Debug Token Request
+//	"$TABLET_SDK_BIN"/blackberry-debugtokenrequest -storepass $PLAYBOOK_PASSWORD -devicepin $PLAYBOOK_PIN "$DEBUG_TOKEN"
+//
+//	# Install Debug Token
+//	"$TABLET_SDK_BIN"/blackberry-deploy -installDebugToken "$DEBUG_TOKEN" -device $PLAYBOOK_IP -password $PLAYBOOK_PASSWORD
+//
+//	# Zip App
+//	cd "$SOURCE_PATH"
+//	zip -r "$SOURCE_PATH" *
+//
+//	# Package App
+//	"$BBWP" $ZIPPED_SOURCE_PATH -d -o $PACKAGED_SOURCE_PATH
+//
+//	# Install App
+//	"$TABLET_SDK_BIN"/blackberry-deploy -installApp -password $PLAYBOOK_PASSWORD -device $PLAYBOOK_IP -package "$PACKAGED_SOURCE_FILE"
 
-public class AppDeployer {
-	private static final String[] IGNORE_FILES = {"testing*", "DeployApp.app*", "PlayBookSigner.app*"};
-	private static AppDeployerWindow window;
-	private static String originalRootHtml;
-	//	# Debug Token Request
-	//	"$TABLET_SDK_BIN"/blackberry-debugtokenrequest -storepass $PLAYBOOK_PASSWORD -devicepin $PLAYBOOK_PIN "$DEBUG_TOKEN"
+public class AppDeployer implements CancelsDeployement {
+	private final AppDeployerWindow window;
+	private String originalRootHtml;
+	private final ExecutorService executorService = newFixedThreadPool(1);
+
+	//	private static void runCommand(String[] command) throws IOException, InterruptedException {
+	//		runCommand(command, new File(""));
+	//	}
 	//
-	//	# Install Debug Token
-	//	"$TABLET_SDK_BIN"/blackberry-deploy -installDebugToken "$DEBUG_TOKEN" -device $PLAYBOOK_IP -password $PLAYBOOK_PASSWORD
+	//	private static void runCommand(String[] command, File dir) throws IOException, InterruptedException {
+	//		window.printlnToConsole("Running Command: " + Joiner.on(" ").join(command));
 	//
-	//	# Zip App
-	//	cd "$SOURCE_PATH"
-	//	zip -r "$SOURCE_PATH" *
+	//		CommandLine cmdLine = new CommandLine(dir);
+	//		for (String s : command) {
+	//			cmdLine.addArgument(s);
+	//		}
 	//
-	//	# Package App
-	//	"$BBWP" $ZIPPED_SOURCE_PATH -d -o $PACKAGED_SOURCE_PATH
+	//		DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler() {
 	//
-	//	# Install App
-	//	"$TABLET_SDK_BIN"/blackberry-deploy -installApp -password $PLAYBOOK_PASSWORD -device $PLAYBOOK_IP -package "$PACKAGED_SOURCE_FILE"
+	//		};
+	//
+	//		PumpStreamHandler psh = new PumpStreamHandler(new CommandLogger(window), new CommandLogger(window));
+	//
+	//		ExecuteWatchdog watchdog = new ExecuteWatchdog(60*1000);
+	//		Executor executor = new DefaultExecutor();
+	//		executor.setStreamHandler(psh);
+	//		executor.setWatchdog(watchdog);
+	//		executor.execute(cmdLine);
+	//
+	//		// some time later the result handler callback was invoked so we
+	//		// can safely request the exit value
+	//		resultHandler.waitFor();
+	//
+	//
+	//	}
 
-	public static void main(String[] args) {
-		window = new AppDeployerWindow();
+	public AppDeployer(AppDeployerWindow window) {
+		this.window = window;
 	}
+	public void deploy() throws IOException, InterruptedException {
+		window.enableDeployment(false);
 
-	private static void printToConsole(InputStream is) throws IOException {
-		String line;
-		BufferedReader input = new BufferedReader(new InputStreamReader(is));
-		while ((line = input.readLine()) != null) {
-			window.printlnToConsole(line);
-		}
-		input.close();
-	}
-
-	private static void runCommand(String[] command) throws IOException, InterruptedException {
-		runCommand(command, null);
-	}
-
-	private static void runCommand(String[] command, File dir) throws IOException, InterruptedException {
-		window.printlnToConsole("Running Command: " + Joiner.on(" ").join(command));
-		Process p = Runtime.getRuntime().exec(command, new String[0], dir);
-		p.waitFor();
-		printToConsole(p.getInputStream());
-		printToConsole(p.getErrorStream());
-		if (p.exitValue() == 0) {
-			window.printlnToConsole("Finished Command");
-		} else {
-			throw new RuntimeException("Command Failed");
-		}
-		window.printlnToConsole("");
-	}
-
-	public static void deploy() throws IOException, InterruptedException {
-		String[] debugTokenRequest = {getDebugTokenRequestPath(), "-storepass", window.getPlaybookPassword(), "-devicepin", window.getPlaybookPin(), getDebugTokenPath()};
-		String[] installDebugToken = {getDeployCommandPath(), "-installDebugToken", getDebugTokenPath(), "-device", window.getPlaybookIp(), "-password", window.getPlaybookPassword()};
-		String[] zip = {"zip", "-r", window.getProjectPath(), ".", "*", "-x", ".*"};
-		String[] packageApp = {getBbwpPath(), window.getProjectPath() + ".zip", "-d", "-o", window.getProjectPath()};
-		String[] deployApp = {getDeployCommandPath(), "-installApp", "-password", window.getPlaybookPassword(), "-device", window.getPlaybookIp(), "-package", getPackagePath()};
-		String[] cleanUp = {"rm", "-f", window.getProjectPath() + ".zip", getPackagePath()};
+		Command debugTokenRequest 	= new Command(this, window, getDebugTokenRequestPath(), "-storepass", window.getPlaybookPassword(), "-devicepin", window.getPlaybookPin(), getDebugTokenPath());
+		Command installDebugToken 	= new Command(this, window, getDeployCommandPath(), "-installDebugToken", getDebugTokenPath(), "-device", window.getPlaybookIp(), "-password", window.getPlaybookPassword());
+		Command zip 				= new Command(this, window, new File(window.getProjectPath()), "zip", "-r", window.getProjectPath(), ".", "*", "-x", ".*", "testing*", "DeployApp.app*", "PlayBookSigner.app*");
+		Command packageApp 			= new Command(this, window, getBbwpPath(), window.getProjectPath() + ".zip", "-d", "-o", window.getProjectPath());
+		Command deployApp 			= new Command(this, window, getDeployCommandPath(), "-installApp", "-password", window.getPlaybookPassword(), "-device", window.getPlaybookIp(), "-package", getPackagePath());
+		Command cleanUp 			= new Command(this, window, "rm", "-f", window.getProjectPath() + ".zip", getPackagePath());
 
 		try {
-			setRootHtmlFile();
-			runCommand(cleanUp);
-			runCommand(debugTokenRequest);
-			runCommand(installDebugToken);
-			runCommand(concat(zip, IGNORE_FILES, String.class), new File(window.getProjectPath()));
-			runCommand(packageApp);
-			runCommand(deployApp);
-			runCommand(cleanUp);
-			revertRootHtmlFile();
-			window.printlnToConsole("Finished All Commands");
+			executorService.execute(setRootHtmlFile());
+			executorService.execute(cleanUp);
+			executorService.execute(debugTokenRequest);
+			executorService.execute(installDebugToken);
+			executorService.execute(zip);
+			executorService.execute(packageApp);
+			executorService.execute(deployApp);
+			executorService.execute(cleanUp);
+			executorService.execute(new DeploymentFinalizer(this));
 		} catch (Exception e) {
-			window.printlnToConsole("ERROR: Deployement failed:\n" + e);
+			cancelDeployement(e.getMessage());
 		}
 	}
 
-	private static void setRootHtmlFile() {
-		try {
-			originalRootHtml = new XmlModifier().modifyFile(window.getProjectPath() + "/config.xml", "content", "src", window.getRootHtml());
-			window.printlnToConsole("Changed src attribute of the content element in " + window.getProjectPath() + "/config.xml from " + originalRootHtml + " to " + window.getRootHtml());
-		} catch (Exception e) {
-			window.printlnToConsole("ERROR: Failed to change src attribute of the content element in " + window.getProjectPath() + "/config.xml to " + window.getRootHtml());
-			throw new RuntimeException(e);
-		}
-		window.printlnToConsole("");
+	private XmlModifier setRootHtmlFile() {
+		return new XmlModifier.Builder()
+		.withFile(window.getProjectPath() + "/config.xml")
+		.withElement("content")
+		.withAttribute("src")
+		.withValue(window.getRootHtml())
+		.withCanceler(this)
+		.withConsole(window)
+		.withXmlChangeListener(new XmlChangeListener() {
+
+			@Override
+			public void onXmlChange(String oldValue) {
+				originalRootHtml = oldValue;
+			}
+		}).build();
 	}
 
-	private static void revertRootHtmlFile() {
-		try {
-			new XmlModifier().modifyFile(window.getProjectPath() + "/config.xml", "content", "src", originalRootHtml);
-			window.printlnToConsole("Reverted src attribute of the content element in " + window.getProjectPath() + "/config.xml from " + window.getRootHtml() + " to " + originalRootHtml);
-		} catch (Exception e) {
-			window.printlnToConsole("ERROR: Failed to revert src attribute of the content element in " + window.getProjectPath() + "/config.xml to " + originalRootHtml);
-		}
-		window.printlnToConsole("");
+	private XmlModifier revertRootHtmlFile() {
+		return new XmlModifier.Builder()
+		.withFile(window.getProjectPath() + "/config.xml")
+		.withElement("content")
+		.withAttribute("src")
+		.withValue(originalRootHtml)
+		.withCanceler(this)
+		.withConsole(window)
+		.build();
 	}
 
-	private static String getSdkBin() {
+	private String getSdkBin() {
 		return window.getSdkPath() + "/bbwp/blackberry-tablet-sdk/bin";
 	}
 
-	private static String getDebugTokenRequestPath() {
+	private String getDebugTokenRequestPath() {
 		return getSdkBin() + "/blackberry-debugtokenrequest";
 	}
 
-	private static String getDebugTokenPath() {
+	private String getDebugTokenPath() {
 		return window.getSdkPath() + "/bbwp/blackberry-tablet-sdk/debug-tokens/playbook_debug_token.bar";
 	}
 
-	private static String getPackagePath() {
+	private String getPackagePath() {
 		return window.getProjectPath() + window.getProjectPath().substring(window.getProjectPath().lastIndexOf("/")) + ".bar";
 	}
 
-	private static String getDeployCommandPath() {
+	private String getDeployCommandPath() {
 		return getSdkBin() + "/blackberry-deploy";
 	}
 
-	private static String getBbwpPath() {
+	private String getBbwpPath() {
 		return window.getSdkPath() + "/bbwp/bbwp";
+	}
+
+	@Override
+	public void cancelDeployement(String message) {
+		executorService.shutdownNow();
+		window.printlnToConsole("ERROR: Deployement failed: " + message);
+		window.enableDeployment(true);
+		if (originalRootHtml != null) {
+			revertRootHtmlFile().run();
+		}
+	}
+
+	public void finalizeDepoyment() {
+		window.enableDeployment(true);
+		if (originalRootHtml != null) {
+			revertRootHtmlFile().run();
+		}
+		window.printlnToConsole("Finished All Commands");
 	}
 }

@@ -26,9 +26,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-public class AppDeployerWindow {
+public class AppDeployerWindow implements PrintsMessages {
 	private static final String DEFAULT_SOURCE_PATH=System.getProperty("user.home") + "/Documents/GitHub/UWCenterStack";
-	private static final String DEFAULT_PLAYBOOK_IP="69.91.176.132";
+	private static final String DEFAULT_PLAYBOOK_IP="169.254.0.1";
 	private static final String DEFAULT_PLAYBOOK_PASSWORD="playbook";
 	private static final String[] PLAYBOOK_PINS={"501138E7", "502CEE27", "50303968"};
 	private static final String DEFAULT_TABLET_SKD ="/Developer/SDKs/Research In Motion/BlackBerry WebWorks SDK for TabletOS 2.2.0.5";
@@ -48,6 +48,7 @@ public class AppDeployerWindow {
 	JLabel projectPathLabel = new JLabel();
 	JTextField rootHtmlPathField = new JTextField();
 	JLabel rootHtmlPathLabel = new JLabel();
+	JButton deployButton = new JButton();
 
 	JTextArea console = new JTextArea();
 
@@ -56,7 +57,6 @@ public class AppDeployerWindow {
 		mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		JPanel buttonPanel = new JPanel();
-		JButton deployButton = new JButton();
 		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
 		buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
 		buttonPanel.add(Box.createHorizontalGlue());
@@ -85,7 +85,8 @@ public class AppDeployerWindow {
 			public void actionPerformed(ActionEvent event)
 			{
 				try {
-					AppDeployer.deploy();
+					console.setText("");
+					new AppDeployer(AppDeployerWindow.this).deploy();
 				} catch (Exception e) {
 					console.setText(e.toString());
 				}
@@ -193,6 +194,7 @@ public class AppDeployerWindow {
 		return playbookPasswordField.getText();
 	}
 
+	@Override
 	public void printlnToConsole(String text) {
 		console.setText(console.getText() + text + "\n");
 	}
@@ -207,5 +209,14 @@ public class AppDeployerWindow {
 
 	public String getRootHtml() {
 		return rootHtmlPathField.getText();
+	}
+
+	@Override
+	public void printlnToConsole() {
+		printlnToConsole("");
+	}
+
+	public void enableDeployment(boolean enable) {
+		deployButton.setEnabled(enable);
 	}
 }
