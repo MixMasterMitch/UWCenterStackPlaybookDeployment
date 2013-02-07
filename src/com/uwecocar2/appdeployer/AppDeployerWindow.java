@@ -13,6 +13,12 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Scanner;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -33,12 +39,13 @@ import javax.swing.JTextField;
  * Displays logs in the console.
  */
 public class AppDeployerWindow implements PrintsMessages {
-	private static final String DEFAULT_SOURCE_PATH = System.getProperty("user.home") + "/Documents/GitHub/UWCenterStack";
-	private static final String DEFAULT_PLAYBOOK_IP = "169.254.0.1";
-	private static final String DEFAULT_PLAYBOOK_PASSWORD = "playbook";
-	private static final String[] PLAYBOOK_PINS = {"501138E7", "502CEE27", "50303968"};
-	private static final String DEFAULT_TABLET_SKD = "/Developer/SDKs/Research In Motion/BlackBerry WebWorks SDK for TabletOS 2.2.0.5";
-	private static final String DEFAULT_ROOT_HTML = "srcs/t2c/coord.html";
+	private static String default_source_path;
+	private static String default_playbook_ip;
+	private static String default_playbook_password;
+	private static String[] playbook_pins;
+	private static int playbook_pins_index;
+	private static String default_tablet_sdk;
+	private static String default_root_html;
 	private static final String MAIN_WINDOW_TITLE = "Deploy App";
 
 	// UI elements
@@ -60,6 +67,25 @@ public class AppDeployerWindow implements PrintsMessages {
 	private final JTextArea console = new JTextArea();
 
 	public AppDeployerWindow() {
+		Scanner s = null;
+		ArrayList<String> settings = new ArrayList<String>();
+		try {
+			s = new Scanner(new File("text.txt"));
+		} catch (FileNotFoundException e1) {
+			// do nothing for now
+		}
+		while(s.hasNextLine()){
+			settings.add(s.nextLine());
+		}
+		
+		default_source_path = System.getProperty("user.home") + settings.get(0);
+		default_playbook_ip = settings.get(1);
+		default_playbook_password = settings.get(2);
+		playbook_pins = new String[] {settings.get(3), settings.get(4), settings.get(5)};
+		playbook_pins_index = Integer.parseInt(settings.get(6));
+		default_tablet_sdk = settings.get(7);
+		default_root_html = settings.get(8);
+		
 		// Create mainWindow to hold all other elements
 		JFrame mainWindow = new JFrame(MAIN_WINDOW_TITLE);
 		mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -72,20 +98,21 @@ public class AppDeployerWindow implements PrintsMessages {
 		buttonPanel.add(deployButton);
 
 		// Setup UI fields
-		playbookIpField.setText(DEFAULT_PLAYBOOK_IP);
+		playbookIpField.setText(default_playbook_ip);
 		playbookIpLabel.setText("Playbook IP Address");
-		playbookPasswordField.setText(DEFAULT_PLAYBOOK_PASSWORD);
+		playbookPasswordField.setText(default_playbook_password);
 		playbookPasswordLabel.setText("Playbook Password");
-		for (String pin : PLAYBOOK_PINS) {
+		for (String pin : playbook_pins) {
 			playbookPinComboBox.addItem(pin);
 		}
+		playbookPinComboBox.setSelectedIndex(playbook_pins_index);
 		playbookPinLabel.setText("Playbook PIN");
 
-		sdkPathField.setText(DEFAULT_TABLET_SKD);
+		sdkPathField.setText(default_tablet_sdk);
 		sdkPathLabel.setText("SDK Path");
-		projectPathField.setText(DEFAULT_SOURCE_PATH);
+		projectPathField.setText(default_source_path);
 		projectPathLabel.setText("Project Path");
-		rootHtmlPathField.setText(DEFAULT_ROOT_HTML);
+		rootHtmlPathField.setText(default_root_html);
 		rootHtmlPathLabel.setText("Root Html File");
 
 		// Setup deployButton
@@ -95,6 +122,30 @@ public class AppDeployerWindow implements PrintsMessages {
 			@Override
 			public void actionPerformed(ActionEvent event)
 			{
+				FileWriter writer = null;
+				String settings = projectPathField.getText().substring(System.getProperty("user.home").length()) + '\n' +
+								  playbookIpField.getText() + '\n' + 
+								  playbookPasswordField.getText() + '\n' + 
+								  playbook_pins[0] + '\n' +
+								  playbook_pins[1] + '\n' +
+								  playbook_pins[2] + '\n' +
+								  playbookPinComboBox.getSelectedIndex() + '\n' +
+								  sdkPathField.getText() + '\n' +
+								  rootHtmlPathField.getText();
+				System.out.println(settings);
+				try {
+					writer = new FileWriter("text.txt", false);
+				} catch (IOException e1) {
+					System.out.println("SHIT!");
+				}
+				try {
+					writer.write(settings);
+					writer.flush();
+				} catch (IOException e1) {
+					// do nothing now
+				}
+				
+				
 				try {
 					console.setText("");
 					new AppDeployer(AppDeployerWindow.this).deploy();
