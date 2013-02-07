@@ -14,10 +14,7 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Scanner;
 
 import javax.swing.BorderFactory;
@@ -47,6 +44,7 @@ public class AppDeployerWindow implements PrintsMessages {
 	private static String default_tablet_sdk;
 	private static String default_root_html;
 	private static final String MAIN_WINDOW_TITLE = "Deploy App";
+	private static final String DEFAULT = "/Documents/GitHub/UWCenterStack\n169.254.0.1\nplaybook\n501138E7\n502CEE27\n50303968\n0\n/Developer/SDKs/Research In Motion/BlackBerry WebWorks SDK for TabletOS 2.2.0.5\nsrcs/t2c/coord.html";
 
 	// UI elements
 	private final JPanel fieldsPanel = new JPanel();
@@ -66,25 +64,8 @@ public class AppDeployerWindow implements PrintsMessages {
 
 	private final JTextArea console = new JTextArea();
 
-	public AppDeployerWindow() {
-		Scanner s = null;
-		ArrayList<String> settings = new ArrayList<String>();
-		try {
-			s = new Scanner(new File("text.txt"));
-		} catch (FileNotFoundException e1) {
-			// do nothing for now
-		}
-		while(s.hasNextLine()){
-			settings.add(s.nextLine());
-		}
-		
-		default_source_path = System.getProperty("user.home") + settings.get(0);
-		default_playbook_ip = settings.get(1);
-		default_playbook_password = settings.get(2);
-		playbook_pins = new String[] {settings.get(3), settings.get(4), settings.get(5)};
-		playbook_pins_index = Integer.parseInt(settings.get(6));
-		default_tablet_sdk = settings.get(7);
-		default_root_html = settings.get(8);
+	public AppDeployerWindow() {		
+		setFields(getSettings());
 		
 		// Create mainWindow to hold all other elements
 		JFrame mainWindow = new JFrame(MAIN_WINDOW_TITLE);
@@ -122,29 +103,7 @@ public class AppDeployerWindow implements PrintsMessages {
 			@Override
 			public void actionPerformed(ActionEvent event)
 			{
-				FileWriter writer = null;
-				String settings = projectPathField.getText().substring(System.getProperty("user.home").length()) + '\n' +
-								  playbookIpField.getText() + '\n' + 
-								  playbookPasswordField.getText() + '\n' + 
-								  playbook_pins[0] + '\n' +
-								  playbook_pins[1] + '\n' +
-								  playbook_pins[2] + '\n' +
-								  playbookPinComboBox.getSelectedIndex() + '\n' +
-								  sdkPathField.getText() + '\n' +
-								  rootHtmlPathField.getText();
-				System.out.println(settings);
-				try {
-					writer = new FileWriter("text.txt", false);
-				} catch (IOException e1) {
-					System.out.println("SHIT!");
-				}
-				try {
-					writer.write(settings);
-					writer.flush();
-				} catch (IOException e1) {
-					// do nothing now
-				}
-				
+				setSettings(getFields());		
 				
 				try {
 					console.setText("");
@@ -245,6 +204,62 @@ public class AppDeployerWindow implements PrintsMessages {
 		mainWindow.pack();
 		mainWindow.setVisible(true);
 
+	}
+	
+	public String[] getSettings() {
+		try {
+			Scanner s = new Scanner(new File("text.txt"));
+			String[] settings = new String[9];
+			int index = 0;
+			
+			while(index < settings.length) {
+				settings[index++] = s.nextLine();
+			}
+		
+			return settings;
+		} catch (Exception e) {
+			System.out.println(e.toString());
+			console.setText("Error retrieving settings, resetting to default...");
+			return DEFAULT.split("\n");
+		}
+	}
+	
+	public String[] getFields() {
+		String[] fields = {getProjectPath().substring(System.getProperty("user.home").length()),
+						   getPlaybookIp(),
+						   getPlaybookPassword(),
+						   playbook_pins[0],
+						   playbook_pins[1],
+						   playbook_pins[2],
+						   playbookPinComboBox.getSelectedIndex() + "",
+						   getSdkPath(),
+						   getRootHtml()
+						  };
+		return fields;
+	}
+	
+	public void setFields(String[] settings) {
+		default_source_path = System.getProperty("user.home") + settings[0];
+		default_playbook_ip = settings[1];
+		default_playbook_password = settings[2];
+		playbook_pins = new String[] {settings[3], settings[4], settings[5]};
+		playbook_pins_index = Integer.parseInt(settings[6]);
+		default_tablet_sdk = settings[7];
+		default_root_html = settings[8];
+	}
+	
+	public void setSettings(String[] settings) {
+		try {
+			FileWriter writer = new FileWriter("text.txt", false);
+			StringBuilder builder = new StringBuilder();
+			for (String s : settings) {
+				builder.append(s + '\n');
+			}
+			writer.write(builder.toString());
+			writer.close();
+		} catch (Exception e) {
+			// do nothing
+		}
 	}
 
 	/**
