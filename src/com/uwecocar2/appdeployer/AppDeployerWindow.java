@@ -248,7 +248,7 @@ public class AppDeployerWindow implements PrintsMessages {
 						   getRootHtml()
 						  };
 		if (getProjectPath().startsWith(System.getProperty("user.home"))){
-			getProjectPath().substring(System.getProperty("user.home").length());
+			fields[0] = getProjectPath().substring(System.getProperty("user.home").length());
 		} else {
 			projectPathField.setText(System.getProperty("user.home") + fields[0]);
 		}
