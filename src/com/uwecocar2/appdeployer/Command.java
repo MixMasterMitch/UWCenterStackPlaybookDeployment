@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import com.google.common.base.Joiner;
+//import com.google.common.base.Joiner;
 
 /**
  * A Command that will run as a new process.
@@ -31,7 +31,7 @@ public class Command extends AppDeployerRunnable {
 	 */
 	@Override
 	public void run() {
-		console.printlnToConsole("Running Command: " + Joiner.on(" ").join(args));
+//		console.printlnToConsole("Running Command: " + Joiner.on(" ").join(args));
 		try {
 			Process p = Runtime.getRuntime().exec(args, new String[0], workingDir);
 			p.waitFor();

@@ -226,19 +226,18 @@ public class AppDeployerWindow implements PrintsMessages {
 		} catch (FileNotFoundException e) {
 			File file = new File(System.getProperty("user.home") + "/Library/Application Support/CenterStack/");
 			file.mkdirs();
-			return DEFAULT.split("\n");
 		} catch (Exception e) {
-			System.out.println(e.toString());
-			console.setText("Error retrieving settings, resetting to default...");
-			return DEFAULT.split("\n");
+			// do nothing for now
 		}
+		console.setText("Error retrieving settings, resetting to default...");
+		return DEFAULT.split("\n");
 	}
 	
 	/**
 	 * @return String array of all text from fields
 	 */
 	public String[] getFields() {
-		String[] fields = {getProjectPath().substring(System.getProperty("user.home").length()),
+		String[] fields = {DEFAULT.split("\n")[0],
 						   getPlaybookIp(),
 						   getPlaybookPassword(),
 						   playbook_pins[0],
@@ -248,6 +247,11 @@ public class AppDeployerWindow implements PrintsMessages {
 						   getSdkPath(),
 						   getRootHtml()
 						  };
+		if (getProjectPath().startsWith(System.getProperty("user.home"))){
+			getProjectPath().substring(System.getProperty("user.home").length());
+		} else {
+			projectPathField.setText(System.getProperty("user.home") + fields[0]);
+		}
 		return fields;
 	}
 	
