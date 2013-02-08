@@ -61,6 +61,7 @@ public class AppDeployerWindow implements PrintsMessages {
 	private final JTextField rootHtmlPathField = new JTextField();
 	private final JLabel rootHtmlPathLabel = new JLabel();
 	private final JButton deployButton = new JButton();
+	private final JButton defaultButton = new JButton();
 
 	private final JTextArea console = new JTextArea();
 
@@ -76,24 +77,15 @@ public class AppDeployerWindow implements PrintsMessages {
 		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
 		buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
 		buttonPanel.add(Box.createHorizontalGlue());
+		buttonPanel.add(defaultButton);
 		buttonPanel.add(deployButton);
 
 		// Setup UI fields
-		playbookIpField.setText(default_playbook_ip);
 		playbookIpLabel.setText("Playbook IP Address");
-		playbookPasswordField.setText(default_playbook_password);
 		playbookPasswordLabel.setText("Playbook Password");
-		for (String pin : playbook_pins) {
-			playbookPinComboBox.addItem(pin);
-		}
-		playbookPinComboBox.setSelectedIndex(playbook_pins_index);
 		playbookPinLabel.setText("Playbook PIN");
-
-		sdkPathField.setText(default_tablet_sdk);
 		sdkPathLabel.setText("SDK Path");
-		projectPathField.setText(default_source_path);
 		projectPathLabel.setText("Project Path");
-		rootHtmlPathField.setText(default_root_html);
 		rootHtmlPathLabel.setText("Root Html File");
 
 		// Setup deployButton
@@ -111,6 +103,15 @@ public class AppDeployerWindow implements PrintsMessages {
 				} catch (Exception e) {
 					console.setText(e.toString());
 				}
+			}
+		});
+		
+		//Setup deployButton
+		defaultButton.setText("Restore Settings");
+		defaultButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				setFields(DEFAULT.split("\n"));
+				setSettings(getFields());
 			}
 		});
 
@@ -218,7 +219,6 @@ public class AppDeployerWindow implements PrintsMessages {
 		
 			return settings;
 		} catch (Exception e) {
-			System.out.println(e.toString());
 			console.setText("Error retrieving settings, resetting to default...");
 			return DEFAULT.split("\n");
 		}
@@ -246,6 +246,17 @@ public class AppDeployerWindow implements PrintsMessages {
 		playbook_pins_index = Integer.parseInt(settings[6]);
 		default_tablet_sdk = settings[7];
 		default_root_html = settings[8];
+		
+		playbookIpField.setText(default_playbook_ip);
+		playbookPasswordField.setText(default_playbook_password);
+		playbookPinComboBox.removeAllItems();
+		for (String pin : playbook_pins) {
+			playbookPinComboBox.addItem(pin);
+		}
+		playbookPinComboBox.setSelectedIndex(playbook_pins_index);
+		sdkPathField.setText(default_tablet_sdk);
+		projectPathField.setText(default_source_path);
+		rootHtmlPathField.setText(default_root_html);
 	}
 	
 	public void setSettings(String[] settings) {

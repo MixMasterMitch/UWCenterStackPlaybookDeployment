@@ -1,9 +1,9 @@
-/Documents/UWCenterStack
-169.254.45.23
+/Documents/GitHub/UWCenterStack
+169.254.0.1
 playbook
 501138E7
 502CEE27
 50303968
 0
 /Developer/SDKs/Research In Motion/BlackBerry WebWorks SDK for TabletOS 2.2.0.5
-srcs/dial/coord.html
+srcs/t2c/coord.html
