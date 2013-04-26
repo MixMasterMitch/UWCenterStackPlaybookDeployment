@@ -24,16 +24,18 @@ import javax.swing.BoxLayout;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.filechooser.FileFilter;
 
 /**
  * The user interface for the AppDeployer.
- * 
+ *
  * Displays logs in the console.
  */
 public class AppDeployerWindow implements PrintsMessages {
@@ -63,12 +65,16 @@ public class AppDeployerWindow implements PrintsMessages {
 	private final JLabel rootHtmlPathLabel = new JLabel();
 	private final JButton deployButton = new JButton();
 	private final JButton defaultButton = new JButton();
+	private final JButton installSigningKeysButton = new JButton();
 
 	private final JTextArea console = new JTextArea();
 
-	public AppDeployerWindow() {		
+	private final JFileChooser signingKeysFileChooser = new JFileChooser();
+	private String rdkKeyPath;
+	private String pbdtKeyPath;
+
+	public AppDeployerWindow() {
 		setFields(getSettings());
-		
 		// Create mainWindow to hold all other elements
 		JFrame mainWindow = new JFrame(MAIN_WINDOW_TITLE);
 		mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -79,6 +85,7 @@ public class AppDeployerWindow implements PrintsMessages {
 		buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
 		buttonPanel.add(Box.createHorizontalGlue());
 		buttonPanel.add(defaultButton);
+		buttonPanel.add(installSigningKeysButton);
 		buttonPanel.add(deployButton);
 
 		// Setup UI labels
@@ -89,6 +96,61 @@ public class AppDeployerWindow implements PrintsMessages {
 		projectPathLabel.setText("Project Path");
 		rootHtmlPathLabel.setText("Root Html File");
 
+		// Setup signingKeysFileChooser
+		signingKeysFileChooser.setMultiSelectionEnabled(true);
+		signingKeysFileChooser.setDialogTitle("Select Signing Keys");
+		signingKeysFileChooser.addChoosableFileFilter(new FileFilter() {
+
+			@Override
+			public boolean accept(File file) {
+				String name = file.getName();
+				return name.contains(".csj") && (name.contains("RDK") || name.contains("PBDT"));
+			}
+
+			@Override
+			public String getDescription() {
+				return "BlackBerry Keys \".csj\"";
+			}
+
+		});
+
+		// Setup installSigningKeysButton
+		installSigningKeysButton.setText("Install Signing Keys");
+		installSigningKeysButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent event)
+			{
+
+				// Get signingKeys
+				signingKeysFileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+				signingKeysFileChooser.showDialog(null, "Select");
+				File[] keys = signingKeysFileChooser.getSelectedFiles();
+				if (keys.length == 2
+						&& keys[0].getName().contains("RDK")
+						&& keys[1].getName().contains("PBDT")) {
+					rdkKeyPath = keys[0].getPath();
+					pbdtKeyPath = keys[1].getPath();
+				} else if (keys.length == 2
+						&& keys[0].getName().contains("PBDT")
+						&& keys[1].getName().contains("RDK")) {
+					rdkKeyPath = keys[1].getPath();
+					pbdtKeyPath = keys[0].getPath();
+				} else {
+					console.setText("ERROR: You must select a PBDT and RDK file.");
+					return;
+				}
+
+				// Install signingKeys
+				try {
+					console.setText("");
+					new AppDeployer(AppDeployerWindow.this).installSigningKeys();
+				} catch (Exception e) {
+					console.setText(e.toString());
+				}
+			}
+		});
+
 		// Setup deployButton
 		deployButton.setText("Deploy");
 		deployButton.addActionListener(new ActionListener() {
@@ -96,8 +158,8 @@ public class AppDeployerWindow implements PrintsMessages {
 			@Override
 			public void actionPerformed(ActionEvent event)
 			{
-				setSettings(getFields());		
-				
+				setSettings(getFields());
+
 				try {
 					console.setText("");
 					new AppDeployer(AppDeployerWindow.this).deploy();
@@ -106,10 +168,11 @@ public class AppDeployerWindow implements PrintsMessages {
 				}
 			}
 		});
-		
+
 		//Setup deployButton
 		defaultButton.setText("Restore Settings");
 		defaultButton.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent event) {
 				setFields(DEFAULT.split("\n"));
 				setSettings(getFields());
@@ -207,7 +270,7 @@ public class AppDeployerWindow implements PrintsMessages {
 		mainWindow.setVisible(true);
 
 	}
-	
+
 	/**
 	 * Reads text.txt for stored settings
 	 * @return String array of all settings|String array of default settings
@@ -217,11 +280,11 @@ public class AppDeployerWindow implements PrintsMessages {
 			Scanner s = new Scanner(new File(System.getProperty("user.home") + "/Library/Application Support/CenterStack/settings"));
 			String[] settings = new String[9];
 			int index = 0;
-			
+
 			while(index < settings.length) {
 				settings[index++] = s.nextLine();
 			}
-		
+
 			return settings;
 		} catch (FileNotFoundException e) {
 			File file = new File(System.getProperty("user.home") + "/Library/Application Support/CenterStack/");
@@ -232,21 +295,21 @@ public class AppDeployerWindow implements PrintsMessages {
 		console.setText("Error retrieving settings, resetting to default...");
 		return DEFAULT.split("\n");
 	}
-	
+
 	/**
 	 * @return String array of all text from fields
 	 */
 	public String[] getFields() {
 		String[] fields = {DEFAULT.split("\n")[0],
-						   getPlaybookIp(),
-						   getPlaybookPassword(),
-						   playbook_pins[0],
-						   playbook_pins[1],
-						   playbook_pins[2],
-						   playbookPinComboBox.getSelectedIndex() + "",
-						   getSdkPath(),
-						   getRootHtml()
-						  };
+				getPlaybookIp(),
+				getPlaybookPassword(),
+				playbook_pins[0],
+				playbook_pins[1],
+				playbook_pins[2],
+				playbookPinComboBox.getSelectedIndex() + "",
+				getSdkPath(),
+				getRootHtml()
+		};
 		if (getProjectPath().startsWith(System.getProperty("user.home"))){
 			fields[0] = getProjectPath().substring(System.getProperty("user.home").length());
 		} else {
@@ -254,7 +317,7 @@ public class AppDeployerWindow implements PrintsMessages {
 		}
 		return fields;
 	}
-	
+
 	/**
 	 * Sets the fields
 	 * @param String array of setting values
@@ -267,7 +330,7 @@ public class AppDeployerWindow implements PrintsMessages {
 		playbook_pins_index = Integer.parseInt(settings[6]);
 		default_tablet_sdk = settings[7];
 		default_root_html = settings[8];
-		
+
 		playbookIpField.setText(default_playbook_ip);
 		playbookPasswordField.setText(default_playbook_password);
 		playbookPinComboBox.removeAllItems();
@@ -279,7 +342,7 @@ public class AppDeployerWindow implements PrintsMessages {
 		projectPathField.setText(default_source_path);
 		rootHtmlPathField.setText(default_root_html);
 	}
-	
+
 	/**
 	 * Saves the setting values
 	 * @param settings String array of setting values
@@ -354,7 +417,22 @@ public class AppDeployerWindow implements PrintsMessages {
 	 * Enables or disables the deployment button.
 	 * @param enable true to enable the button.
 	 */
-	public void enableDeployment(boolean enable) {
+	public void enableActionButtons(boolean enable) {
 		deployButton.setEnabled(enable);
+		installSigningKeysButton.setEnabled(enable);
+	}
+
+	/**
+	 * @return The path to the RDK signing key file.
+	 */
+	public String getRdkKeyPath() {
+		return rdkKeyPath;
+	}
+
+	/**
+	 * @return The path to the PBDT signing key file.
+	 */
+	public String getPbdtKeyPath() {
+		return pbdtKeyPath;
 	}
 }

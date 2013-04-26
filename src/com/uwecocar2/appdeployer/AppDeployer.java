@@ -60,12 +60,13 @@ public class AppDeployer implements CancelsDeployement {
 	public AppDeployer(AppDeployerWindow window) {
 		this.window = window;
 	}
+
 	public void deploy() throws IOException, InterruptedException {
-		window.enableDeployment(false);
+		window.enableActionButtons(false);
 
 		Command debugTokenRequest 	= new Command(this, window, getDebugTokenRequestPath(), "-storepass", window.getPlaybookPassword(), "-devicepin", window.getPlaybookPin(), getDebugTokenPath());
 		Command installDebugToken 	= new Command(this, window, getDeployCommandPath(), "-installDebugToken", getDebugTokenPath(), "-device", window.getPlaybookIp(), "-password", window.getPlaybookPassword());
-		Command zip 				= new Command(this, window, new File(window.getProjectPath()), "zip", "-r", window.getProjectPath(), ".", "*", "-x", ".*", "testing*", "DeployApp.app*", "PlayBookSigner.app*");
+		Command zip 				= new Command(this, window, new File(window.getProjectPath()), "zip", "-r", window.getProjectPath(), ".", "-x", ".*", "deltas*");
 		Command packageApp 			= new Command(this, window, getBbwpPath(), window.getProjectPath() + ".zip", "-d", "-o", window.getProjectPath());
 		Command deployApp 			= new Command(this, window, getDeployCommandPath(), "-installApp", "-password", window.getPlaybookPassword(), "-device", window.getPlaybookIp(), "-package", getPackagePath());
 		Command cleanUp 			= new Command(this, window, "rm", "-f", window.getProjectPath() + ".zip", getPackagePath());
@@ -79,6 +80,15 @@ public class AppDeployer implements CancelsDeployement {
 			executorService.execute(packageApp);
 			executorService.execute(deployApp);
 			executorService.execute(cleanUp);
+			executorService.execute(new DeploymentFinalizer(this));
+		} catch (Exception e) {
+			cancelDeployement(e.getMessage());
+		}
+	}
+
+	public void installSigningKeys() {
+		try {
+			executorService.execute(new Command(this, window, getSignerPath(), "-register", "-csjpin", window.getPlaybookPin().toLowerCase(), "-storepass", window.getPlaybookPassword(), window.getRdkKeyPath(), window.getPbdtKeyPath()));
 			executorService.execute(new DeploymentFinalizer(this));
 		} catch (Exception e) {
 			cancelDeployement(e.getMessage());
@@ -117,6 +127,10 @@ public class AppDeployer implements CancelsDeployement {
 		return window.getSdkPath() + "/bbwp/blackberry-tablet-sdk/bin";
 	}
 
+	private String getSignerPath() {
+		return getSdkBin() + "/blackberry-signer";
+	}
+
 	private String getDebugTokenRequestPath() {
 		return getSdkBin() + "/blackberry-debugtokenrequest";
 	}
@@ -140,7 +154,7 @@ public class AppDeployer implements CancelsDeployement {
 	@Override
 	public void cancelDeployement(String message) {
 		executorService.shutdownNow();
-		window.enableDeployment(true);
+		window.enableActionButtons(true);
 		if (originalRootHtml != null) {
 			revertRootHtmlFile().run();
 		}
@@ -148,7 +162,7 @@ public class AppDeployer implements CancelsDeployement {
 	}
 
 	public void finalizeDepoyment() {
-		window.enableDeployment(true);
+		window.enableActionButtons(true);
 		if (originalRootHtml != null) {
 			revertRootHtmlFile().run();
 		}
