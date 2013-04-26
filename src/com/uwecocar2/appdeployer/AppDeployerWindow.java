@@ -14,6 +14,9 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.util.Scanner;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -32,17 +35,19 @@ import javax.swing.filechooser.FileFilter;
 
 /**
  * The user interface for the AppDeployer.
- * 
+ *
  * Displays logs in the console.
  */
 public class AppDeployerWindow implements PrintsMessages {
-	private static final String DEFAULT_SOURCE_PATH = System.getProperty("user.home") + "/Documents/GitHub/UWCenterStack";
-	private static final String DEFAULT_PLAYBOOK_IP = "169.254.0.1";
-	private static final String DEFAULT_PLAYBOOK_PASSWORD = "playbook";
-	private static final String[] PLAYBOOK_PINS = {"501138E7", "502CEE27", "50303968"};
-	private static final String DEFAULT_TABLET_SKD = "/Developer/SDKs/Research In Motion/BlackBerry WebWorks SDK for TabletOS 2.2.0.5";
-	private static final String DEFAULT_ROOT_HTML = "srcs/t2c/coord.html";
+	private static String default_source_path;
+	private static String default_playbook_ip;
+	private static String default_playbook_password;
+	private static String[] playbook_pins;
+	private static int playbook_pins_index;
+	private static String default_tablet_sdk;
+	private static String default_root_html;
 	private static final String MAIN_WINDOW_TITLE = "Deploy App";
+	private static final String DEFAULT = "/Documents/GitHub/UWCenterStack\n169.254.0.1\nplaybook\n501138E7\n502CEE27\n50303968\n0\n/Developer/SDKs/Research In Motion/BlackBerry WebWorks SDK for TabletOS 2.2.0.5\nsrcs/t2c/coord.html";
 
 	// UI elements
 	private final JPanel fieldsPanel = new JPanel();
@@ -59,6 +64,7 @@ public class AppDeployerWindow implements PrintsMessages {
 	private final JTextField rootHtmlPathField = new JTextField();
 	private final JLabel rootHtmlPathLabel = new JLabel();
 	private final JButton deployButton = new JButton();
+	private final JButton defaultButton = new JButton();
 	private final JButton installSigningKeysButton = new JButton();
 
 	private final JTextArea console = new JTextArea();
@@ -68,6 +74,7 @@ public class AppDeployerWindow implements PrintsMessages {
 	private String pbdtKeyPath;
 
 	public AppDeployerWindow() {
+		setFields(getSettings());
 		// Create mainWindow to hold all other elements
 		JFrame mainWindow = new JFrame(MAIN_WINDOW_TITLE);
 		mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -77,24 +84,16 @@ public class AppDeployerWindow implements PrintsMessages {
 		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
 		buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
 		buttonPanel.add(Box.createHorizontalGlue());
+		buttonPanel.add(defaultButton);
 		buttonPanel.add(installSigningKeysButton);
 		buttonPanel.add(deployButton);
 
-		// Setup UI fields
-		playbookIpField.setText(DEFAULT_PLAYBOOK_IP);
+		// Setup UI labels
 		playbookIpLabel.setText("Playbook IP Address");
-		playbookPasswordField.setText(DEFAULT_PLAYBOOK_PASSWORD);
 		playbookPasswordLabel.setText("Playbook Password");
-		for (String pin : PLAYBOOK_PINS) {
-			playbookPinComboBox.addItem(pin);
-		}
 		playbookPinLabel.setText("Playbook PIN");
-
-		sdkPathField.setText(DEFAULT_TABLET_SKD);
 		sdkPathLabel.setText("SDK Path");
-		projectPathField.setText(DEFAULT_SOURCE_PATH);
 		projectPathLabel.setText("Project Path");
-		rootHtmlPathField.setText(DEFAULT_ROOT_HTML);
 		rootHtmlPathLabel.setText("Root Html File");
 
 		// Setup signingKeysFileChooser
@@ -159,12 +158,24 @@ public class AppDeployerWindow implements PrintsMessages {
 			@Override
 			public void actionPerformed(ActionEvent event)
 			{
+				setSettings(getFields());
+
 				try {
 					console.setText("");
 					new AppDeployer(AppDeployerWindow.this).deploy();
 				} catch (Exception e) {
 					console.setText(e.toString());
 				}
+			}
+		});
+
+		//Setup deployButton
+		defaultButton.setText("Restore Settings");
+		defaultButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent event) {
+				setFields(DEFAULT.split("\n"));
+				setSettings(getFields());
 			}
 		});
 
@@ -258,6 +269,96 @@ public class AppDeployerWindow implements PrintsMessages {
 		mainWindow.pack();
 		mainWindow.setVisible(true);
 
+	}
+
+	/**
+	 * Reads text.txt for stored settings
+	 * @return String array of all settings|String array of default settings
+	 */
+	public String[] getSettings() {
+		try {
+			Scanner s = new Scanner(new File(System.getProperty("user.home") + "/Library/Application Support/CenterStack/settings"));
+			String[] settings = new String[9];
+			int index = 0;
+
+			while(index < settings.length) {
+				settings[index++] = s.nextLine();
+			}
+
+			return settings;
+		} catch (FileNotFoundException e) {
+			File file = new File(System.getProperty("user.home") + "/Library/Application Support/CenterStack/");
+			file.mkdirs();
+		} catch (Exception e) {
+			// do nothing for now
+		}
+		console.setText("Error retrieving settings, resetting to default...");
+		return DEFAULT.split("\n");
+	}
+
+	/**
+	 * @return String array of all text from fields
+	 */
+	public String[] getFields() {
+		String[] fields = {DEFAULT.split("\n")[0],
+				getPlaybookIp(),
+				getPlaybookPassword(),
+				playbook_pins[0],
+				playbook_pins[1],
+				playbook_pins[2],
+				playbookPinComboBox.getSelectedIndex() + "",
+				getSdkPath(),
+				getRootHtml()
+		};
+		if (getProjectPath().startsWith(System.getProperty("user.home"))){
+			fields[0] = getProjectPath().substring(System.getProperty("user.home").length());
+		} else {
+			projectPathField.setText(System.getProperty("user.home") + fields[0]);
+		}
+		return fields;
+	}
+
+	/**
+	 * Sets the fields
+	 * @param String array of setting values
+	 */
+	public void setFields(String[] settings) {
+		default_source_path = System.getProperty("user.home") + settings[0];
+		default_playbook_ip = settings[1];
+		default_playbook_password = settings[2];
+		playbook_pins = new String[] {settings[3], settings[4], settings[5]};
+		playbook_pins_index = Integer.parseInt(settings[6]);
+		default_tablet_sdk = settings[7];
+		default_root_html = settings[8];
+
+		playbookIpField.setText(default_playbook_ip);
+		playbookPasswordField.setText(default_playbook_password);
+		playbookPinComboBox.removeAllItems();
+		for (String pin : playbook_pins) {
+			playbookPinComboBox.addItem(pin);
+		}
+		playbookPinComboBox.setSelectedIndex(playbook_pins_index);
+		sdkPathField.setText(default_tablet_sdk);
+		projectPathField.setText(default_source_path);
+		rootHtmlPathField.setText(default_root_html);
+	}
+
+	/**
+	 * Saves the setting values
+	 * @param settings String array of setting values
+	 */
+	public void setSettings(String[] settings) {
+		try {
+			FileWriter writer = new FileWriter(System.getProperty("user.home") + "/Library/Application Support/CenterStack/settings", false);
+			StringBuilder builder = new StringBuilder();
+			for (String s : settings) {
+				builder.append(s + '\n');
+			}
+			writer.write(builder.toString());
+			writer.close();
+		} catch (Exception e) {
+			// do nothing
+		}
 	}
 
 	/**

@@ -154,11 +154,11 @@ public class AppDeployer implements CancelsDeployement {
 	@Override
 	public void cancelDeployement(String message) {
 		executorService.shutdownNow();
-		window.printlnToConsole("ERROR: Deployement failed: " + message);
 		window.enableActionButtons(true);
 		if (originalRootHtml != null) {
 			revertRootHtmlFile().run();
 		}
+		window.printlnToConsole("ERROR: Deployement failed: " + message);
 	}
 
 	public void finalizeDepoyment() {
