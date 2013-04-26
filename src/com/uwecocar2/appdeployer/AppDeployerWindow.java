@@ -13,6 +13,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -20,12 +21,14 @@ import javax.swing.BoxLayout;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.filechooser.FileFilter;
 
 /**
  * The user interface for the AppDeployer.
@@ -56,8 +59,13 @@ public class AppDeployerWindow implements PrintsMessages {
 	private final JTextField rootHtmlPathField = new JTextField();
 	private final JLabel rootHtmlPathLabel = new JLabel();
 	private final JButton deployButton = new JButton();
+	private final JButton installSigningKeysButton = new JButton();
 
 	private final JTextArea console = new JTextArea();
+
+	private final JFileChooser signingKeysFileChooser = new JFileChooser();
+	private String rdkKeyPath;
+	private String pbdtKeyPath;
 
 	public AppDeployerWindow() {
 		// Create mainWindow to hold all other elements
@@ -69,6 +77,7 @@ public class AppDeployerWindow implements PrintsMessages {
 		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
 		buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
 		buttonPanel.add(Box.createHorizontalGlue());
+		buttonPanel.add(installSigningKeysButton);
 		buttonPanel.add(deployButton);
 
 		// Setup UI fields
@@ -87,6 +96,61 @@ public class AppDeployerWindow implements PrintsMessages {
 		projectPathLabel.setText("Project Path");
 		rootHtmlPathField.setText(DEFAULT_ROOT_HTML);
 		rootHtmlPathLabel.setText("Root Html File");
+
+		// Setup signingKeysFileChooser
+		signingKeysFileChooser.setMultiSelectionEnabled(true);
+		signingKeysFileChooser.setDialogTitle("Select Signing Keys");
+		signingKeysFileChooser.addChoosableFileFilter(new FileFilter() {
+
+			@Override
+			public boolean accept(File file) {
+				String name = file.getName();
+				return name.contains(".csj") && (name.contains("RDK") || name.contains("PBDT"));
+			}
+
+			@Override
+			public String getDescription() {
+				return "BlackBerry Keys \".csj\"";
+			}
+
+		});
+
+		// Setup installSigningKeysButton
+		installSigningKeysButton.setText("Install Signing Keys");
+		installSigningKeysButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent event)
+			{
+
+				// Get signingKeys
+				signingKeysFileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+				signingKeysFileChooser.showDialog(null, "Select");
+				File[] keys = signingKeysFileChooser.getSelectedFiles();
+				if (keys.length == 2
+						&& keys[0].getName().contains("RDK")
+						&& keys[1].getName().contains("PBDT")) {
+					rdkKeyPath = keys[0].getPath();
+					pbdtKeyPath = keys[1].getPath();
+				} else if (keys.length == 2
+						&& keys[0].getName().contains("PBDT")
+						&& keys[1].getName().contains("RDK")) {
+					rdkKeyPath = keys[1].getPath();
+					pbdtKeyPath = keys[0].getPath();
+				} else {
+					console.setText("ERROR: You must select a PBDT and RDK file.");
+					return;
+				}
+
+				// Install signingKeys
+				try {
+					console.setText("");
+					new AppDeployer(AppDeployerWindow.this).installSigningKeys();
+				} catch (Exception e) {
+					console.setText(e.toString());
+				}
+			}
+		});
 
 		// Setup deployButton
 		deployButton.setText("Deploy");
@@ -252,7 +316,22 @@ public class AppDeployerWindow implements PrintsMessages {
 	 * Enables or disables the deployment button.
 	 * @param enable true to enable the button.
 	 */
-	public void enableDeployment(boolean enable) {
+	public void enableActionButtons(boolean enable) {
 		deployButton.setEnabled(enable);
+		installSigningKeysButton.setEnabled(enable);
+	}
+
+	/**
+	 * @return The path to the RDK signing key file.
+	 */
+	public String getRdkKeyPath() {
+		return rdkKeyPath;
+	}
+
+	/**
+	 * @return The path to the PBDT signing key file.
+	 */
+	public String getPbdtKeyPath() {
+		return pbdtKeyPath;
 	}
 }
